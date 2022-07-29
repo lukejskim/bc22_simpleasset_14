@@ -1,0 +1,145 @@
+
+// 5. set 함수
+func (t *SimpleAsset) Set(stub shim.ChaincodeStubInterface, args []string) peer.Response{
+	
+	if len(args) != 2 {
+		return shim.Error("Incorrect arguments. Expecting a key and value")
+	}
+	// 오류체크 중복 키 검사 -> 덮어쓰기로 해결
+
+	// 마샬링 할 구조체 생성
+	asset := Asset{Key:args[0], Value:args[1]}
+
+	assetAsByte, err := json.Marshal(asset)
+
+	if err != nil {
+		return shim.Error("Failed to marshal arguments:" + args[0] + " " + args[1])
+	}
+
+	err = stub.PutState(args[0], assetAsByte)
+	if err != nil {
+		return shim.Error("Failed to set asset:" + args[0])
+	}
+
+	return shim.Success(assetAsByte)
+}
+
+
+// 6. get 함수 
+// stub : peer를 통해서 전달    cf. docker images
+func (t *SimpleAsset) Get(stub shim.ChaincodeStubInterface, args []string) peer.Response{
+
+	if len(args) != 1 {
+		return shim.Error("Incorrect arguments. Expecting a key")
+	}
+
+	value, err := stub.GetState(args[0])
+	if err != nil {
+		return shim.Error("Filed to get asset: " + args[0] + " with error: " + err.Error())
+	}
+	if value == nil {
+		return shim.Error("Asset not found: " + args[0])
+	}
+
+	return shim.Success([]byte(value))
+}
+
+
+
+
+	// 마샬링 할 구조체 생성
+	asset := Asset{Key:args[0], Value:args[1]}
+
+	assetAsByte, err := json.Marshal(asset)
+
+	if err != nil {
+		return shim.Error("Failed to marshal arguments:" + args[0] + " " + args[1])
+	}
+
+	err = stub.PutState(args[0], assetAsByte)
+
+
+
+
+	value, err := stub.GetState(args[0])
+
+
+
+보내는사람, 받는사람, 금액
+
+A -> B
+
+A,B 자산이 있는지 확인
+
+조회
+존재 여부
+잔액 확인
+
+
+잔액을 이동 : 계산후 다시 set
+putState
+
+
+value값만 꺼내 쓸려면...
+unmarshal을 해야 되고,
+기존 기록값은 string 이므로, int 로 변환
+
+
+import (
+	"strconv"
+)
+
+strconv.Atoi("305") => 305
+
+
+1. basic-network 구동
+2. cli 구동
+3. simpleasset 1.0 체인코드 설치 스크립트 실행
+
+
+
+
+[upgrade.sh]
+#!/bin/bash
+
+set -x
+
+# 1. 설치
+docker exec cli peer chaincode install -n simpleasset -v 1.1.1 -p github.com/simpleasset/1.1 
+docker exec cli peer chaincode list --installed
+
+# 2. 배포
+docker exec cli peer chaincode upgrade -n simpleasset -v 1.1.1 -C mychannel -P 'AND ("Org1MSP.member")' -c '{"Args":[]}'
+sleep 3
+docker exec cli peer chaincode list --instantiated -C mychannel
+
+# ------------------------------ 체인코드 설치 배포 완료
+# 확인하는 방법2가지 : query, invoke
+
+# 3. 인보크
+docker exec cli peer chaincode invoke -n simpleasset -C mychannel -c '{"Args":["set","c","5000"]}'
+sleep 3
+docker exec cli peer chaincode invoke -n simpleasset -C mychannel -c '{"Args":["set","d","1000"]}'
+sleep 3
+
+docker exec cli peer chaincode invoke -n simpleasset -C mychannel -c '{"Args":["transfer","c","d","3000"]}'
+sleep 3
+
+# 4. 쿼리
+docker exec cli peer chaincode query -n simpleasset -C mychannel -c '{"Args":["get","c"]}'
+docker exec cli peer chaincode query -n simpleasset -C mychannel -c '{"Args":["get","d"]}'
+
+# 5. Del
+docker exec cli peer chaincode invoke -n simpleasset -C mychannel -c '{"Args":["del","c"]}'
+sleep 3
+docker exec cli peer chaincode query -n simpleasset -C mychannel -c '{"Args":["get","c"]}'
+
+
+
+
+
+go build
+./upgrade.sh 
+
+
+

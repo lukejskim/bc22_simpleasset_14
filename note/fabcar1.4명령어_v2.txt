@@ -1,0 +1,32 @@
+. ~/.profile
+
+go mod init fabric
+go get github.com/hyperledger/fabric/core/chaincode/shim@v1.4
+go build 
+
+docker-compose -f docker-compose.yml up -d cli
+docker exec cli peer chaincode install -n fabcar -v 1.0 -p github.com/fabcar/go 
+docker exec cli peer chaincode instantiate -o orderer.example.com:7050 -n fabcar -v 1.0 -c '{"Args":[]}' -C mychannel -P "OR ('Org1MSP.member','Org2MSP.member')"
+docker exec cli peer chaincode invoke -o orderer.example.com:7050 -n fabcar -c '{"Args":["initLedger"]}' -C mychannel
+docker exec cli peer chaincode query -n fabcar -c '{"Args":["queryAllCars"]}' -C mychannel
+docker exec cli peer chaincode invoke -o orderer.example.com:7050 -n fabcar -c '{"Args":["createCar","CAR12","sm","sm3","red","shin"]}' -C mychannel
+docker exec cli peer chaincode query -n fabcar -c '{"Args":["queryCar","CAR12"]}' -C mychannel
+
+
+
+[docker-compose.yml]
+    volumes:
+        - /var/run/:/host/var/run/
+        - ./../../../dev/:/opt/gopath/src/github.com/     <-- 118 line 수정
+
+
+docker-compose -f docker-compose.yml up -d cli
+docker ps -a
+docker exec cli peer chaincode install -n simpleasset -v 1.0 -p github.com/simpleasset/1.0
+docker exec cli peer chaincode list --installed
+
+
+배포하기
+이름은 simpleasset v1.0
+
+

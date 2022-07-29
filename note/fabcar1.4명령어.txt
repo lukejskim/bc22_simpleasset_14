@@ -1,0 +1,115 @@
+. ~/.profile
+
+go mod init fabric
+
+cat go.mod
+
+go get github.com/hyperledger/fabric/core/chaincode/shim@v1.4
+go build 
+
+go env            
+go env | grep home
+
+
+네크워크를 구축한 상태에서 
+체인코드를 관리자로 콘솔을 이용해서 작업
+
+$ cd /home/bstudent/fabric/fabric-samples/basic-network
+$ docker ps -a
+$ docker images   
+$ docker network ls
+
+$ docker ps -aq     컨테이들 실행변수들만 출력
+$ docker rm -f $(docker ps -aq)
+
+$ docker images dev-*
+$ docker rmi $(docker images dev-* -q)
+$ docker rmi -f $(docker images dev-* -q)
+
+cf. .\teardown.sh 파일 실행해도 된다.
+
+$ docker network prune
+WARNING! This will remove all custom networks not used by at least one container.
+Are you sure you want to continue? [y/N] y
+Deleted Networks:
+net_basic
+
+
+$ docker exec peer0.org1.example.com peer channel list
+2022-07-28 02:44:25.056 UTC [channelCmd] InitCmdFactory -> INFO 001 Endorser and orderer connections initialized
+Channels peers has joined: 
+mychannel
+
+
+configx.yaml  파일내용확인
+
+
+$ cat config/channel.tx
+
+
+
+<1--
+docker-compose -f docker-compose.yml up -d cli
+docker exec cli peer chaincode install -n fabcar -v 1.0 -p github.com/fabcar/go 
+docker exec cli peer chaincode instantiate -o orderer.example.com:7050 -n fabcar -v 1.0 -c '{"Args":[]}' -C mychannel -P "OR ('Org1MSP.member','Org12SP.member')"
+docker exec cli peer chaincode invoke -o orderer.example.com:7050 -n fabcar -c '{"Args":["initLedger"]}' -C mychannel
+docker exec cli peer chaincode query -n fabcar -c '{"Args":["queryAllCars"]}' -C mychannel
+docker exec cli peer chaincode invoke -o orderer.example.com:7050 -n fabcar -c '{"Args":["createCar","CAR12","sm","sm3","red","shin"]}' -C mychannel
+docker exec cli peer chaincode query -n fabcar -c '{"Args":["queryCar","CAR12"]}' -C mychannel
+-->
+
+
+docker-compose -f docker-compose.yml up -d cli
+docker exec cli peer chaincode install -n fabcar -v 1.0 -p github.com/fabcar/go 
+
+docker exec cli peer chaincode instantiate -o orderer.example.com:7050 -n fabcar -v 1.0 -c '{"Args":[]}' -C mychannel -P "OR ('Org1MSP.member','Org2MSP.member')"
+
+docker exec cli peer chaincode list --instantiated -C mychannel
+
+
+
+docker exec cli peer chaincode invoke -o orderer.example.com:7050 -n fabcar -c '{"Args":["initLedger"]}' -C mychannel
+
+docker exec cli peer chaincode query -n fabcar -c '{"Args":["queryAllCars"]}' -C mychannel
+
+docker exec cli peer chaincode invoke -o orderer.example.com:7050 -n fabcar -c '{"Args":["createCar","CAR12","sm","sm3","red","shin"]}' -C mychannel
+
+docker exec cli peer chaincode query -n fabcar -c '{"Args":["queryCar","CAR12"]}' -C mychannel
+
+
+
+
+
+$ docker exec cli peer chaincode list --installed -C mychannel
+
+
+http://localhost:5984/_utils/
+
+
+
+
+
+dev/simplaeasset/1.0/simpleasset.go
+
+echo > simpleasset.go
+
+// 패키지 정의
+
+// 1. 외부 모듈 포함
+
+// 2. 체인코드 클래스-구조체 정의 SimpleAsset
+
+// 3. Init 함수
+
+// 4. Invoke 함수
+
+// 5. Set 함수
+
+// 6. Get 함수
+
+// 7. Main 함수 
+
+
+
+
+
